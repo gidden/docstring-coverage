@@ -19,17 +19,11 @@ The code doesn't work on classes or functions that are eval'd into existence.
 #оценивать покрытие какой-то субъективной оценкой с учетом длины докстрингов
 #добавить ворнинг, что докстринг малоиформативный, т.е. слишком уж короткий (например, символов 15 и меньше)
 #добавить статистику по коротким докстрингам и вообще по их длине
-#добавить разные уровни вербозности - можно выводить только общий процент покрытия по папке и оценку, или по каждому модулю
-#  или также выводить какие докстринги именно пропущены
-#  в совсем вербозном случае можно писать какие докстринги есть
 #сделать опцию, позволяющую пропускать все магические методы, типа __init__, __str__, __unicode__ и т.п.
 #сделать readme
 # пропускать пустые __init__.py или вообще все пустые файлы? Под пустыми понимаются те, в которых нет вообще ничего - т.е. и переменных тоже
 # опция поддержки симлинков для os.walk? Добавляется легко, но нужна ли?
-# вынести парсинг опций за пределы main()!! должно быть в блоке проверки __name__=="__main__" или сделать отдельную функцию main
-# можно переименовать main во что-то более удобное для внешнего использования и сделать чтобы он возвращал статистику в каком-то формате
-#  внутренем, например в виже кортежа с путями к файлам и статистикой по ним в числовом виде - тогда можно будет во внешних модулях
-# это все использовать
+
 
 import compiler
 
@@ -82,7 +76,7 @@ class DocStringCoverageVisitor(compiler.visitor.ASTVisitor):
 GRADES=(
     ("IMPOSSIBRUU!", 100),
     ("sweet!!", 92),
-    ("excelent", 85),
+    ("excellent", 85),
     ("very good", 70),
     ("good", 60),    
     ("not so bad", 40),
@@ -151,7 +145,7 @@ def get_docstring_coverage(filenames, count_magic=True, skip_empty_files = True,
         
         name, isDoc, childNodes = node
         if isDoc == False:
-            print ' - No docstring for %s%s!' % (base, name)
+            log(' - No docstring for %s%s!' % (base, name), 3)
             missing_list.append(base+name)
         else:
             #можно выводить, что есть докстринг при максимальной вербозности
@@ -174,7 +168,7 @@ def get_docstring_coverage(filenames, count_magic=True, skip_empty_files = True,
     
     for filename in filenames:
         
-        print "\nFile %s" % filename
+        log("\nFile %s" % filename, 2)
         
         file_docs_needed = 1    #module docstring
         file_docs_covered = 1  #we assume we have module docstring
@@ -183,7 +177,7 @@ def get_docstring_coverage(filenames, count_magic=True, skip_empty_files = True,
         module = DocStringCoverageVisitor(filename).getResult()
         
         if not module[0]:
-            print " - No module dostring!"
+            log(" - No module dostring!", 3)
             file_docs_covered-=1    
         
         #traverse through functions and classes    
@@ -205,9 +199,9 @@ def get_docstring_coverage(filenames, count_magic=True, skip_empty_files = True,
                                 'coverage': float(file_docs_covered)*100/float(file_docs_needed)
                                 }
                                 
-        print " Needed: %s; Exist: %s; Missing: %s; Coverage: %.1f%%" % (file_docs_needed, file_docs_covered,
+        log(" Needed: %s; Exist: %s; Missing: %s; Coverage: %.1f%%" % (file_docs_needed, file_docs_covered,
                                                                     result_dict[filename]['missing_count'],
-                                                                    result_dict[filename]['coverage'])
+                                                                    result_dict[filename]['coverage']) ,2)
     
     total_result_dict = {
                         'missing_count': total_docs_needed - total_docs_covered,                                
@@ -218,15 +212,17 @@ def get_docstring_coverage(filenames, count_magic=True, skip_empty_files = True,
     postfix=""
     if(not count_magic): postfix=" (all magic methods omited!)"    
     
+    log("\n",2)
+    
     if len(filenames)>1:
-        print "\nOverall statistics for %s files%s:" % (len(filenames), postfix)
+        log("Overall statistics for %s files%s:" % (len(filenames), postfix), 1)
     else:
-        print "\nOverall statistics%s:" % postfix
+        log("Overall statistics%s:" % postfix, 1)
         
-    print "Docstrings needed: %s;" % total_docs_needed,
-    print "Docstings exist: %s;" % total_docs_covered,
-    print "Docstings missing: %s" % (total_result_dict['missing_count'])
-    print "Total docstring coverage: %.1f%%; " % (total_result_dict['coverage']), 
+    log("Docstrings needed: %s;" % total_docs_needed, 1, append=True)
+    log("Docstings exist: %s;" % total_docs_covered, 1, append=True)
+    log("Docstings missing: %s" % (total_result_dict['missing_count']), 1)
+    log("Total docstring coverage: %.1f%%; " % (total_result_dict['coverage']), 1, True)
     
     grade = ""
     for grade, value in GRADES:
@@ -234,7 +230,7 @@ def get_docstring_coverage(filenames, count_magic=True, skip_empty_files = True,
             grade = grade
             break;
             
-    print "Grade: %s" % grade
+    log("Grade: %s" % grade, 1)
     
     return result_dict, total_result_dict
 
@@ -245,8 +241,8 @@ if __name__ == '__main__':
     
     #creating options
     parser = OptionParser(usage = usage, version="%prog " + __version__)
-    parser.add_option("-v", "--verbose", dest="verbosity", default="2",metavar="LEVEL",
-                      help="verbose level <0-3>",type="choice", choices = ['0','1','2','3'])
+    parser.add_option("-v", "--verbose", dest="verbosity", default="3",metavar="LEVEL",
+                      help="verbose level <0-3>, default 3",type="choice", choices = ['0','1','2','3'])
     parser.add_option("-m", "--nomagic",
                       action="store_false", dest="magic", default=True,
                       help="don't count docstrings for __magic__ methods")
