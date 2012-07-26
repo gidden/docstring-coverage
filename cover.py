@@ -21,7 +21,6 @@ The code doesn't work on classes or functions that are eval'd into existence.
 #добавить статистику по коротким докстрингам и вообще по их длине
 #сделать опцию, позволяющую пропускать все магические методы, типа __init__, __str__, __unicode__ и т.п.
 #сделать readme
-# пропускать пустые __init__.py или вообще все пустые файлы? Под пустыми понимаются те, в которых нет вообще ничего - т.е. и переменных тоже
 # опция поддержки симлинков для os.walk? Добавляется легко, но нужна ли?
 
 
@@ -35,7 +34,7 @@ that have not been given a docstring.
 Shows statistics on docstring coverage.
 '''
 
-__version__ = "0.2"
+__version__ = "0.3"
 
 class DocStringCoverageVisitor(compiler.visitor.ASTVisitor):
     
@@ -47,10 +46,14 @@ class DocStringCoverageVisitor(compiler.visitor.ASTVisitor):
     
     def visitModule(self, module):
         self.symbolcount += 1
-        node = (module.doc is not None and module.doc.strip() != '', [])
+        empty = False
+        if not len(list(module.asList()[1])):
+            empty=True
+        node = (module.doc is not None and module.doc.strip() != '',empty, [])
         self.currentnode.append(node)
         compiler.walk(module.node, self)
         self.result = self.currentnode.pop()
+        
     
     def visitClass(self, clazz):
         self.symbolcount += 1
@@ -113,7 +116,8 @@ def get_docstring_coverage(filenames, count_magic=True, skip_empty_files = True,
                                     'module_doc': <True or False>,  #has module docstring 
                                     'missing_count': <missing_count>,
                                     'needed_count': <needed_docstrings_count>,
-                                    'coverage': <percent_of_coverage>,                                
+                                    'coverage': <percent_of_coverage>,     
+                                    'empty': <True or False> #True if file is empty (no vars, funcs or classes)                           
                                 },
                     ...
                   },
@@ -163,6 +167,7 @@ def get_docstring_coverage(filenames, count_magic=True, skip_empty_files = True,
     #handle docstrings
     total_docs_needed = 0       #for statistics
     total_docs_covered = 0      #
+    empty_files = 0
     
     result_dict = {}        #a dictionary with file statisics
     
@@ -176,27 +181,41 @@ def get_docstring_coverage(filenames, count_magic=True, skip_empty_files = True,
         
         module = DocStringCoverageVisitor(filename).getResult()
         
-        if not module[0]:
+        #module contains [<module docstring>,<is empty (even no vars)>,<symbols: classes and funcs>]
+        if not module[0] and not module[1]:
             log(" - No module dostring!", 3)
             file_docs_covered-=1    
-        
-        #traverse through functions and classes    
-        for symbol in module[1]:
-            temp_docs_needed, temp_docs_covered, missing_list = printDocstring('', symbol)
+        elif module[1]:
+            #file is empty - no need for module docs
+            log(" - File is empty.", 3)
+            file_docs_needed=0
+            file_docs_covered=0
+            empty_files+=1
             
+        #traverse through functions and classes    
+        for symbol in module[-1]:
+            
+            temp_docs_needed, temp_docs_covered, missing_list = printDocstring('', symbol)
             file_docs_needed+=temp_docs_needed
             file_docs_covered+=temp_docs_covered
             file_missing_list+=missing_list
             
+            
         total_docs_needed+=file_docs_needed
         total_docs_covered+=file_docs_covered    
+        
+        if file_docs_needed:
+            coverage = float(file_docs_covered)*100/float(file_docs_needed)
+        else:
+            coverage = 0
         
         result_dict[filename] = { 
                                 'missing': file_missing_list,                                    
                                 'module_doc': bool(module[0]),
                                 'missing_count': file_docs_needed-file_docs_covered,
                                 'needed_count': file_docs_needed,
-                                'coverage': float(file_docs_covered)*100/float(file_docs_needed)
+                                'coverage': coverage,
+                                'empty': bool(module[1])
                                 }
                                 
         log(" Needed: %s; Exist: %s; Missing: %s; Coverage: %.1f%%" % (file_docs_needed, file_docs_covered,
@@ -210,7 +229,8 @@ def get_docstring_coverage(filenames, count_magic=True, skip_empty_files = True,
     }
     
     postfix=""
-    if(not count_magic): postfix=" (all magic methods omited!)"    
+    if(empty_files): postfix=" (%s files are empty)" % empty_files
+    if(not count_magic): postfix+=" (all magic methods omited!)"    
     
     log("\n",2)
     
