@@ -19,7 +19,6 @@ The code doesn't work on classes or functions that are eval'd into existence.
 #оценивать покрытие какой-то субъективной оценкой с учетом длины докстрингов
 #добавить ворнинг, что докстринг малоиформативный, т.е. слишком уж короткий (например, символов 15 и меньше)
 #добавить статистику по коротким докстрингам и вообще по их длине
-#сделать опцию, позволяющую пропускать все магические методы, типа __init__, __str__, __unicode__ и т.п.
 #сделать readme
 # опция поддержки симлинков для os.walk? Добавляется легко, но нужна ли?
 
@@ -34,7 +33,7 @@ that have not been given a docstring.
 Shows statistics on docstring coverage.
 '''
 
-__version__ = "0.3"
+__version__ = "0.3.1"
 
 class DocStringCoverageVisitor(compiler.visitor.ASTVisitor):
     
@@ -149,8 +148,14 @@ def get_docstring_coverage(filenames, count_magic=True, skip_empty_files = True,
         
         name, isDoc, childNodes = node
         if isDoc == False:
-            log(' - No docstring for %s%s!' % (base, name), 3)
-            missing_list.append(base+name)
+            if not count_magic and name.startswith('__') and name.endswith('__'):
+                #if an option to count magic methods is set to false,
+                #we should not count them, obviously
+                docs_needed-=1
+            else:
+                log(' - No docstring for %s%s!' % (base, name), 3)
+                missing_list.append(base+name)
+            
         else:
             #можно выводить, что есть докстринг при максимальной вербозности
             docs_covered+=1
@@ -230,7 +235,7 @@ def get_docstring_coverage(filenames, count_magic=True, skip_empty_files = True,
     
     postfix=""
     if(empty_files): postfix=" (%s files are empty)" % empty_files
-    if(not count_magic): postfix+=" (all magic methods omited!)"    
+    if(not count_magic): postfix+=" (all magic methods omitted!)"    
     
     log("\n",2)
     
@@ -293,7 +298,7 @@ if __name__ == '__main__':
     if(len(filenames)<1):
         sys.exit('No python files found')
     
-    if(not options.magic):
-        raise NotImplementedError("Omitting magic methods not supported yet")
+    #if(not options.magic):
+    #    raise NotImplementedError("Omitting magic methods not supported yet")
     
     get_docstring_coverage(filenames, options.magic, verbose_level = options.verbosity)
