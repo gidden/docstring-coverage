@@ -33,7 +33,7 @@ that have not been given a docstring.
 Shows statistics on docstring coverage.
 '''
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 
 class DocStringCoverageVisitor(compiler.visitor.ASTVisitor):
     
@@ -53,7 +53,6 @@ class DocStringCoverageVisitor(compiler.visitor.ASTVisitor):
         compiler.walk(module.node, self)
         self.result = self.currentnode.pop()
         
-    
     def visitClass(self, clazz):
         self.symbolcount += 1
         isDoc = clazz.doc is not None and clazz.doc.strip() != ''
@@ -259,8 +258,10 @@ def get_docstring_coverage(filenames, count_magic=True, skip_empty_files = True,
     
     return result_dict, total_result_dict
 
-if __name__ == '__main__':
-    
+def main():
+    """
+    main routine
+    """
     import sys, os
     from optparse import OptionParser
     
@@ -282,7 +283,7 @@ if __name__ == '__main__':
     #a list of filenames to be checked for docstrings
     filenames = []
         
-    if 'py' in args[0]:
+    if args[0].endswith('.py'):
         #one module
         filenames = [args[0]]
     else:
@@ -302,3 +303,8 @@ if __name__ == '__main__':
     #    raise NotImplementedError("Omitting magic methods not supported yet")
     
     get_docstring_coverage(filenames, options.magic, verbose_level = options.verbosity)
+    
+
+if __name__ == '__main__':
+    main()
+    
