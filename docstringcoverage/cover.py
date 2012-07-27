@@ -33,7 +33,7 @@ that have not been given a docstring.
 Shows statistics on docstring coverage.
 '''
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 
 class DocStringCoverageVisitor(compiler.visitor.ASTVisitor):
     
@@ -97,7 +97,7 @@ def get_docstring_coverage(filenames, count_magic=True, skip_empty_files = True,
                       absolute or relative paths
     @param count_magic: a bool. If False, skips all __magic__
                         methods and does not include them in the report
-    @param skip_emtpty_files: a bool, if True, skips all empty files,
+    @param skip_empty_files: a bool, if True, skips all empty files,
                               still includes them in the report, but
                               doesn't require a module docstring for them
     @param verbose_level: an int, possible vallues 0..3:
@@ -244,8 +244,8 @@ def get_docstring_coverage(filenames, count_magic=True, skip_empty_files = True,
         log("Overall statistics%s:" % postfix, 1)
         
     log("Docstrings needed: %s;" % total_docs_needed, 1, append=True)
-    log("Docstings exist: %s;" % total_docs_covered, 1, append=True)
-    log("Docstings missing: %s" % (total_result_dict['missing_count']), 1)
+    log("Docstrings exist: %s;" % total_docs_covered, 1, append=True)
+    log("Docstrings missing: %s" % (total_result_dict['missing_count']), 1)
     log("Total docstring coverage: %.1f%%; " % (total_result_dict['coverage']), 1, True)
     
     grade = ""

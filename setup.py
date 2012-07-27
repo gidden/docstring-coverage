@@ -12,4 +12,4 @@ setup(name='docstring-coverage',
                   'docstring-coverage = docstringcoverage.cover:main',                  
               ],              
           },
-      long_description="A simple audit tool for examining python source files for missing docstrings. Lists missing docstring, shows percentage of docstring coverage and rates it.")
+      long_description="A simple audit tool for examining python source files for missing docstrings. Lists missing docstrings, shows percentage of docstring coverage and rates it.")
