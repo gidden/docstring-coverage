@@ -20,7 +20,7 @@ The code doesn't work on classes or functions that are eval'd into existence.
 #добавить ворнинг, что докстринг малоиформативный, т.е. слишком уж короткий (например, символов 15 и меньше)
 #добавить статистику по коротким докстрингам и вообще по их длине
 #сделать readme
-# опция поддержки симлинков для os.walk? Добавляется легко, но нужна ли?
+
 
 
 import compiler
@@ -33,7 +33,7 @@ that have not been given a docstring.
 Shows statistics on docstring coverage.
 '''
 
-__version__ = "0.3.3"
+__version__ = "0.3.4"
 
 class DocStringCoverageVisitor(compiler.visitor.ASTVisitor):
     
@@ -272,6 +272,9 @@ def main():
     parser.add_option("-m", "--nomagic",
                       action="store_false", dest="magic", default=True,
                       help="don't count docstrings for __magic__ methods")
+    parser.add_option("-l", "--followlinks",
+                      action="store_true", dest="followlinks", default=False,
+                      help="follow symlinks")
     #parsing options
     (options, args) = parser.parse_args()
     
@@ -289,7 +292,7 @@ def main():
     else:
         #supposedely directory name supplied, traverse through it
         #to find all py-files
-        for root, dirs, fnames in os.walk(args[0]):
+        for root, dirs, fnames in os.walk(args[0], followlinks = options.followlinks):
             for fname in fnames:
                 if fname.endswith('.py'):
                     sep = os.sep
@@ -298,9 +301,6 @@ def main():
     
     if(len(filenames)<1):
         sys.exit('No python files found')
-    
-    #if(not options.magic):
-    #    raise NotImplementedError("Omitting magic methods not supported yet")
     
     get_docstring_coverage(filenames, options.magic, verbose_level = options.verbosity)
     
